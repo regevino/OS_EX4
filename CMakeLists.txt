@@ -3,4 +3,4 @@ project(ex4)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(ex4 VirtualMemory.cpp MemoryConstants.h VirtualMemory.h PhysicalMemory.h)
+add_executable(ex4 VirtualMemory.cpp MemoryConstants.h PhysicalMemory.cpp SimpleTest.cpp)
