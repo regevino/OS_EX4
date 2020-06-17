@@ -38,7 +38,7 @@ uint64_t restorePage(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t
 	{
 		victim = currentPageIndex;
 	}
-	if (isEmptyTable(tableAddress))
+	if (tableAddress != 0 && isEmptyTable(tableAddress))
 	{
 		// Only zero on highest level of recursion, if root table is empty.
 		return tableAddress;
@@ -47,11 +47,14 @@ uint64_t restorePage(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t
 	{
 		word_t address;
 		PMread(tableAddress + index, &address);
-		uint64_t result = restorePage(pageIndex,currentPageIndex + index , address, std::move(highestAddress), std::move(victim));
-		if (result)
-		{
-			return address;
-		}
+		if (address)
+        {
+            uint64_t result = restorePage(pageIndex,currentPageIndex + index , address, std::move(highestAddress), std::move(victim));
+            if (result)
+            {
+                return result;
+            }
+        }
 	}
 	if (highestAddress + PAGE_SIZE < NUM_FRAMES * PAGE_SIZE)
 	{
