@@ -77,7 +77,7 @@ findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&high
         {
             uint64_t result = findFreeFrame(pageIndex, (currentPageIndex + index) << currentOffsetWidth,
                                             std::move(highestAddress),
-                                            std::move(victim), address, depth + 1, OFFSET_WIDTH);
+                                            std::move(victim), address*PAGE_SIZE, depth + 1, OFFSET_WIDTH);
             if (result)
             {
                 if (result == address)
@@ -117,7 +117,7 @@ findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction = false, 
         {
             PMwrite(tableAddress + tableIndex, 0);
         }
-        return findFrame(pageIndex, currentPageIndex ^ mask, eviction, OFFSET_WIDTH, entry, width - offset);
+        return findFrame(pageIndex, currentPageIndex ^ mask, eviction, OFFSET_WIDTH, entry*PAGE_SIZE, width - offset);
     }
     else
     {
@@ -133,7 +133,7 @@ findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction = false, 
         }
         uint64_t result = findFrame(pageIndex, currentPageIndex ^ mask, eviction, OFFSET_WIDTH, nextFrame,
                                     width - offset);
-        PMwrite(tableAddress + tableIndex, nextFrame);
+        PMwrite(tableAddress + tableIndex, nextFrame/PAGE_SIZE);
         return result;
     }
 }
@@ -149,7 +149,7 @@ void VMinitialize()
 int VMread(uint64_t virtualAddress, word_t *value)
 {
     uint64_t offset = 1LL;
-    for (int i = 0; i < OFFSET_WIDTH; ++i)
+    for (int i = 1; i < OFFSET_WIDTH; ++i)
     {
 //        offset = offset & virtualAddress;
         offset = offset << 1UL;
