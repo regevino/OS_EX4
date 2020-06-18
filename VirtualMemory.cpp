@@ -151,9 +151,11 @@ int VMread(uint64_t virtualAddress, word_t *value)
     uint64_t offset = 1LL;
     for (int i = 0; i < OFFSET_WIDTH; ++i)
     {
-        offset = offset & virtualAddress;
+//        offset = offset & virtualAddress;
         offset = offset << 1UL;
+        offset++;
     }
+    offset = offset& virtualAddress;
     virtualAddress = virtualAddress >> OFFSET_WIDTH;
     uint64_t address = findFrame(virtualAddress, virtualAddress);
     PMread(address + offset, value);
@@ -166,12 +168,15 @@ int VMwrite(uint64_t virtualAddress, word_t value)
     uint64_t offset = 1LL;
     for (int i = 0; i < OFFSET_WIDTH; ++i)
     {
-        offset = offset & virtualAddress;
+//        offset = offset & virtualAddress;
         offset = offset << 1UL;
+        offset++;
     }
+    offset = offset& virtualAddress;
     virtualAddress = virtualAddress >> OFFSET_WIDTH;
     uint64_t address = findFrame(virtualAddress, virtualAddress);
     PMwrite(address + offset, value);
+    uint64_t address2 = findFrame(virtualAddress, virtualAddress);
     return 1;
 }
 
