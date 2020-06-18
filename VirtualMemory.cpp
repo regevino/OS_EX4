@@ -157,7 +157,7 @@ int VMread(uint64_t virtualAddress, word_t *value)
     virtualAddress = virtualAddress >> OFFSET_WIDTH;
     uint64_t address = findFrame(virtualAddress, virtualAddress);
     PMread(address + offset, value);
-    return 0;
+    return 1;
 }
 
 
@@ -172,7 +172,7 @@ int VMwrite(uint64_t virtualAddress, word_t value)
     virtualAddress = virtualAddress >> OFFSET_WIDTH;
     uint64_t address = findFrame(virtualAddress, virtualAddress);
     PMwrite(address + offset, value);
-    return 0;
+    return 1;
 }
 
 uint64_t evict(uint64_t victim, uint64_t newPage)
