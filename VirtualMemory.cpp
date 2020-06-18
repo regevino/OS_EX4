@@ -58,17 +58,10 @@ findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&high
         }
         return 0;
     }
-    if (frameAddress != 0 && depth < TABLES_DEPTH - 1 && isEmptyTable(frameAddress))
+    if (frameAddress != 0 && depth < TABLES_DEPTH && isEmptyTable(frameAddress))
     {
         return frameAddress;
     }
-//    if (depth == TABLES_DEPTH -1)
-//    {
-//        if (cyclicDistance(pageIndex, currentPageIndex) > cyclicDistance(pageIndex, victim))
-//        {
-//            victim = currentPageIndex;
-//        }
-//    }
     for (size_t index = 0; index < PAGE_SIZE; ++index)
     {
         word_t address;
@@ -80,7 +73,7 @@ findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&high
                                             std::move(victim), address*PAGE_SIZE, depth + 1, OFFSET_WIDTH);
             if (result)
             {
-                if (result == address)
+                if (result == address*PAGE_SIZE)
                 {
                     PMwrite(frameAddress + index, 0);
                 }
@@ -148,6 +141,11 @@ void VMinitialize()
 
 int VMread(uint64_t virtualAddress, word_t *value)
 {
+    if (virtualAddress >= VIRTUAL_MEMORY_SIZE)
+    {
+        //TODO
+        return 0;
+    }
     uint64_t offset = 1LL;
     for (int i = 1; i < OFFSET_WIDTH; ++i)
     {
@@ -165,8 +163,13 @@ int VMread(uint64_t virtualAddress, word_t *value)
 
 int VMwrite(uint64_t virtualAddress, word_t value)
 {
+    if (virtualAddress >= VIRTUAL_MEMORY_SIZE)
+    {
+        //TODO
+        return 0;
+    }
     uint64_t offset = 1LL;
-    for (int i = 0; i < OFFSET_WIDTH; ++i)
+    for (int i = 1; i < OFFSET_WIDTH; ++i)
     {
 //        offset = offset & virtualAddress;
         offset = offset << 1UL;
