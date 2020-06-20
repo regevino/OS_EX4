@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <algorithm>
+#include <iostream>
 #include "VirtualMemory.h"
 #include "PhysicalMemory.h"
 
@@ -43,7 +44,7 @@ uint64_t evict(uint64_t victim, uint64_t newPage);
 
 uint64_t
 findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&highestAddress = 0, uint64_t &&victim = 0,
-              uint64_t frameAddress = 0, size_t depth = 0, size_t currentOffsetWidth = ROOT_TABLE_OFFSET)
+              uint64_t ignoreFrame =0, uint64_t frameAddress = 0, size_t depth = 0, size_t currentOffsetWidth = ROOT_TABLE_OFFSET)
 {
 
     if (frameAddress > highestAddress)
@@ -54,11 +55,12 @@ findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&high
     {
         if (cyclicDistance(pageIndex, currentPageIndex >> OFFSET_WIDTH) > cyclicDistance(pageIndex, victim))
         {
+//            std::cerr << "Current Page Index is: " << currentPageIndex << " and victim will be: " << (currentPageIndex >> OFFSET_WIDTH) << " which is on frame: " << frameAddress << '\n';
             victim = currentPageIndex >> OFFSET_WIDTH;
         }
         return 0;
     }
-    if (frameAddress != 0 && depth < TABLES_DEPTH && isEmptyTable(frameAddress))
+    if (frameAddress != 0 && frameAddress!=ignoreFrame && depth < TABLES_DEPTH && isEmptyTable(frameAddress))
     {
         return frameAddress;
     }
@@ -68,9 +70,9 @@ findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&high
         PMread(frameAddress + index, &address);
         if (address)
         {
-            uint64_t result = findFreeFrame(pageIndex, (currentPageIndex + index) << currentOffsetWidth,
+            uint64_t result = findFreeFrame(pageIndex, (currentPageIndex + index) << OFFSET_WIDTH,
                                             std::move(highestAddress),
-                                            std::move(victim), address*PAGE_SIZE, depth + 1, OFFSET_WIDTH);
+                                            std::move(victim), ignoreFrame ,address*PAGE_SIZE, depth + 1, OFFSET_WIDTH);
             if (result)
             {
                 if (result == address*PAGE_SIZE)
@@ -87,6 +89,7 @@ findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0, uint64_t &&high
         {
             return highestAddress + PAGE_SIZE;
         }
+//        std::cerr << "Evicting page: " << victim << '\n';
         return evict(victim, pageIndex);
     }
     return 0;
@@ -118,7 +121,7 @@ findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction = false, 
     }
     else
     {
-        uint64_t nextFrame = findFreeFrame(pageIndex, 0, std::move(highestAddress), pageIndex + 0);
+        uint64_t nextFrame = findFreeFrame(pageIndex, 0, std::move(highestAddress), pageIndex + 0, tableAddress);
         if (width == offset)
         {
             PMrestore(nextFrame / PAGE_SIZE, pageIndex);
@@ -127,9 +130,9 @@ findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction = false, 
         {
             clearTable(nextFrame / PAGE_SIZE);
         }
+        PMwrite(tableAddress + tableIndex, nextFrame/PAGE_SIZE);
         uint64_t result = findFrame(pageIndex, currentPageIndex ^ mask, eviction, OFFSET_WIDTH, nextFrame,
                                     width - offset,std::move(highestAddress));
-        PMwrite(tableAddress + tableIndex, nextFrame/PAGE_SIZE);
         return result;
     }
 }
@@ -182,7 +185,6 @@ int VMwrite(uint64_t virtualAddress, word_t value)
     virtualAddress = virtualAddress >> OFFSET_WIDTH;
     uint64_t address = findFrame(virtualAddress, virtualAddress);
     PMwrite(address + offset, value);
-    uint64_t address2 = findFrame(virtualAddress, virtualAddress);
     return 1;
 }
 
