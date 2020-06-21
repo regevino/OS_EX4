@@ -144,13 +144,9 @@ uint64_t findFreeFrame(uint64_t pageIndex, uint64_t currentPageIndex = 0,
  */
 uint64_t findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction = false,
                    size_t offset = ROOT_TABLE_OFFSET, uint64_t tableAddress = 0,
-                   size_t width = VIRTUAL_ADDRESS_WIDTH - OFFSET_WIDTH,
-                   uint64_t &&highestAddress = 0)
+                   size_t width = VIRTUAL_ADDRESS_WIDTH - OFFSET_WIDTH)
 {
-    if (tableAddress > highestAddress)
-    {
-        highestAddress = tableAddress;
-    }
+
     if (width == 0)
     {
         return tableAddress;
@@ -166,11 +162,11 @@ uint64_t findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction 
             PMwrite(tableAddress + tableIndex, 0);
         }
         return findFrame(pageIndex, currentPageIndex ^ mask, eviction, OFFSET_WIDTH,
-                         entry * PAGE_SIZE, width - offset, std::move(highestAddress));
+                         entry * PAGE_SIZE, width - offset);
     }
     else
     {
-        uint64_t nextFrame = findFreeFrame(pageIndex, 0, std::move(highestAddress), pageIndex + 0,
+        uint64_t nextFrame = findFreeFrame(pageIndex, 0, 0, pageIndex + 0,
                                            tableAddress);
         if (width == offset)
         {
@@ -182,7 +178,7 @@ uint64_t findFrame(uint64_t pageIndex, uint64_t currentPageIndex, bool eviction 
         }
         PMwrite(tableAddress + tableIndex, nextFrame / PAGE_SIZE);
         uint64_t result = findFrame(pageIndex, currentPageIndex ^ mask, eviction, OFFSET_WIDTH,
-                                    nextFrame, width - offset, std::move(highestAddress));
+                                    nextFrame, width - offset);
         return result;
     }
 }
